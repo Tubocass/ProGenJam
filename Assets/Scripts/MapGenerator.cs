@@ -20,20 +20,20 @@ public class MapGenerator : MonoBehaviour {
 	public IntRange roomWidth = new IntRange (3, 10);         
 	public IntRange roomHeight = new IntRange (3, 10);
 
-	private Room[] rooms;		//Array for all the rooms created on this Map
 
-
-
-
+	//Runs once at Runtime
 	void Start () {
 		GenerateMap ();
 	}
 
+
 	void Update() {
+		//click right mouse button to generate new PCG Map
 		if (Input.GetMouseButtonDown (0)) {
 			GenerateMap ();
 		}
 	}
+
 
 
 
@@ -46,16 +46,13 @@ public class MapGenerator : MonoBehaviour {
 
 
 		//using 5; Different values will produce different outputs with smoothing
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 5; i++) {
 			SmoothMap ();
 		}
 
-
-
 		ProcessMap ();
 
-
-
+		//sets the border of the map to walls
 		int borderSize = 1;
 		int[,] borderedMap = new int[width + borderSize * 2,height + borderSize * 2];
 
@@ -99,13 +96,23 @@ public class MapGenerator : MonoBehaviour {
 				}
 			}
 			else {
+				//keeps rooms that pass and stores them in List
 				survivingRooms.Add (new Room (roomRegion, map));
 			}
 		}
 
+		//sort survivingRooms list by roomSize
+		survivingRooms.Sort();
+		foreach (Room r in survivingRooms) {
+			print (r.roomSize);
+		}
 		ConnectClosestRooms (survivingRooms);
 	}
 
+
+
+	//connects the rooms that are closest to each other
+	//need to adjust so it find the shortest connection distance
 	void ConnectClosestRooms(List<Room> allRooms) {
 
 		int bestDistance = 0;
@@ -115,8 +122,10 @@ public class MapGenerator : MonoBehaviour {
 		Room bestRoomB = new Room();
 		bool possibleConnectionFound = false;
 
+		Debug.Log ((int)allRooms.Count);
+
 		foreach(Room roomA in allRooms) {
-			Debug.Log (allRooms);
+			
 			possibleConnectionFound = false;
 
 			foreach(Room roomB in allRooms) {
@@ -146,6 +155,7 @@ public class MapGenerator : MonoBehaviour {
 				}
 			}
 
+			//this Creates a passage way between the rooms that are closest to each other
 			if (possibleConnectionFound) {
 				CreatePassage (bestRoomA, bestRoomB, bestTileA, bestTileB);
 					
@@ -154,17 +164,91 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	//function and math for creating the passage
 	void CreatePassage(Room roomA, Room roomB, Coord tileA, Coord tileB) {
 		Room.ConnectRooms (roomA, roomB);
-		Debug.DrawLine(CoordToWorldPoint (tileA), CoordToWorldPoint (tileB), Color.green, 50);
+		Debug.DrawLine(CoordToWorldPoint (tileA), CoordToWorldPoint (tileB), Color.green, .5f);
 
+		List<Coord> line = GetLine (tileA, tileB);
+		foreach (Coord c in line) {
+			DrawCircle(c,1);
+		}
 	}
 
+	void DrawCircle(Coord c, int r) {
+		for (int x = -r; x <= r; x++) {
+			for (int y = -r; y <= r; y++) {
+				if (x*x + y*y <= r*r) {
+					int drawX = c.tileX + x;
+					int drawY = c.tileY + y;
+					if (IsInMapRange(drawX, drawY)) {
+						map[drawX,drawY] = 0;
+					}
+				}
+			}
+		}
+	}
+
+	List<Coord> GetLine(Coord from, Coord to) {
+		List<Coord> line = new List<Coord> ();
+
+		int x = from.tileX;
+		int y = from.tileY;
+
+		int dx = to.tileX - from.tileX;
+		int dy = to.tileY - from.tileY;
+
+		bool inverted = false;
+		int step = Math.Sign (dx);
+		int gradientStep = Math.Sign (dy);
+
+		int longest = Mathf.Abs (dx);
+		int shortest = Mathf.Abs (dy);
+
+		if (longest < shortest) {
+			inverted = true;
+			longest = Mathf.Abs(dy);
+			shortest = Mathf.Abs(dx);
+
+			step = Math.Sign (dy);
+			gradientStep = Math.Sign (dx);
+		}
+
+		int gradientAccumulation = longest / 2;
+		for (int i =0; i < longest; i ++) {
+			line.Add(new Coord(x,y));
+
+			if (inverted) {
+				y += step;
+			}
+			else {
+				x += step;
+			}
+
+			gradientAccumulation += shortest;
+			if (gradientAccumulation >= longest) {
+				if (inverted) {
+					x += gradientStep;
+				}
+				else {
+					y += gradientStep;
+				}
+				gradientAccumulation -= longest;
+			}
+		}
+
+		return line;
+	}
+
+
+
+	//sets the coordinate to a world point to compare to
 	Vector3 CoordToWorldPoint(Coord tile) {
 		return new Vector3 (-width / 2 + .5f + tile.tileX, 2, -height / 2 + .5f + tile.tileY);
 
 	}
 
+	//produces regions of a given tileType
 	List<List<Coord>> GetRegions(int tileType) {
 		List<List<Coord>> regions = new List<List<Coord>> ();
 		int[,] mapFlags = new int[width,height];
@@ -216,7 +300,7 @@ public class MapGenerator : MonoBehaviour {
 
 
 
-
+	//function to make sure we are on the map
 	bool IsInMapRange(int x, int y) {
 		return x >= 0 && x < width && y >= 0 && y < height;
 	}
@@ -268,7 +352,7 @@ public class MapGenerator : MonoBehaviour {
 		for ( int neighborX = gridX - 1; neighborX <= gridX + 1; neighborX++) {
 			for(int neighborY = gridY - 1; neighborY <= gridY + 1; neighborY ++) {
 				//check to make sure we are safely inside the map and not on an edge tile
-				if(neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height) {
+				if(IsInMapRange(neighborX,neighborY)) {
 				//make sure you're not looking at the current tile	
 				if (neighborX != gridX || neighborY != gridY) {
 					//if passed, increment wallcount	
@@ -302,7 +386,7 @@ public class MapGenerator : MonoBehaviour {
 
 
 	//will store all info about our room
-	class Room {
+	class Room : IComparable<Room> {
 
 
 		public List<Coord> tiles;							//list of coord to store all the tiles in room
@@ -342,6 +426,10 @@ public class MapGenerator : MonoBehaviour {
 
 		public bool isConnected(Room otherRoom) {
 			return connectedRooms.Contains(otherRoom);
+		}
+
+		public int CompareTo(Room otherRoom) {
+			return otherRoom.roomSize.CompareTo (roomSize);
 		}
 	}
 
