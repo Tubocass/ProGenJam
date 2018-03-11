@@ -40,7 +40,7 @@ public class MapGenerator : MonoBehaviour {
 		}
 			
 		//this will return a unique HashCode for the seed
-		System.Random pseudoRandomGen = new System.Random (seed.GetHashCode());
+		System.Random pseudoRandom = new System.Random (seed.GetHashCode());
 
 		for (int x = 0; x < width; x++) { 
 			for(int y = 0; y < height; y++) { 
@@ -49,7 +49,9 @@ public class MapGenerator : MonoBehaviour {
 				if (x == 0 || x == width-1 || y == 0 || y == height - 1) {
 					map[x,y] = 1;
 				} else {
-				map[x, y] = (pseudoRandomGen.Next (0, 100) < randomFillPercent)? 1 : 0;
+					float p = Mathf.PerlinNoise(pseudoRandom.Next(0,100)*0.69f,pseudoRandom.Next(0,100)*0.69f)*100;
+					//Debug.Log(p);
+					map[x,y] = (p < randomFillPercent)? 1: 0; //(pseudoRandom.Next(0,100)
 				}
 			}
 		}
