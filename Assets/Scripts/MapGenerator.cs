@@ -34,12 +34,12 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	void Generate2DColliders() {
 
+//		EdgeCollider2D[] currentColliders = gameObject.GetComponents<EdgeCollider2D> ();
+	}
 
-
-
-
-
+		
 	void GenerateMap() {
 		map = new int[width, height];
 		RandomFillMap ();
@@ -80,6 +80,8 @@ public class MapGenerator : MonoBehaviour {
 			if (wallRegion.Count < wallThresholdSize) {
 				foreach (Coord tile in wallRegion) {
 					map[tile.tileX,tile.tileY] = 0;
+					//Generate2DColliders ();
+					print ("did it bruh");
 				}
 			}
 		}
@@ -105,7 +107,10 @@ public class MapGenerator : MonoBehaviour {
 		survivingRooms.Sort();
 		foreach (Room r in survivingRooms) {
 			print (r.roomSize);
+
+
 		}
+
 		ConnectClosestRooms (survivingRooms);
 	}
 
@@ -404,20 +409,38 @@ public class MapGenerator : MonoBehaviour {
 			connectedRooms = new List<Room>();
 
 			edgeTiles = new List<Coord>();
+
 			foreach(Coord tile in tiles) {
 				for(int x = tile.tileX-1; x<=tile.tileX+1; x++) {
 					for(int y = tile.tileY-1; y<=tile.tileY+1; y++) {
 						if(x == tile.tileX || y == tile.tileY) {
 							if(map[x,y] == 1) {
 								edgeTiles.Add(tile);
+
+
 							}
+
+						}
+					}
+				}
+				//Generate2DColliders();
+			}
+			print ("# of Edge Tiles: " + (int)edgeTiles.Count);
+
+
+			//loop to effect edgeTiles
+			foreach(Coord edgeTile in edgeTiles) {
+				for(int x = edgeTile.tileX-1; x<=edgeTile.tileX+1; x++) {
+					for(int y = edgeTile.tileY-1; y<=edgeTile.tileY+1; y++) {
+						if(x == edgeTile.tileX || y == edgeTile.tileY) {
+							
+							
 						}
 					}
 				}
 			}
 		}
-
-
+			
 
 		public static void ConnectRooms(Room roomA, Room roomB) {
 			roomA.connectedRooms.Add (roomB);
@@ -442,8 +465,12 @@ public class MapGenerator : MonoBehaviour {
 
 		if (map != null) {
 			for (int x = 0; x < width; x++) { 
-				for (int y = 0; y < height; y++) { 
-					Gizmos.color = (map[x, y] == 1) ? Color.black : Color.white;
+				for (int y = 0; y < height; y++) {
+						if(map[x, y] == 1) {
+						Gizmos.color = Color.black;
+						} else {
+						Gizmos.color = Color.white;
+						}
 					Vector3 pos = new Vector3 (-width / 2 + x + .5f, 0, -height / 2 + y + .5f);
 					Gizmos.DrawCube (pos, Vector3.one);
 				}
