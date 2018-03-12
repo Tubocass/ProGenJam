@@ -33,7 +33,7 @@ public class AltMapGenerator : MonoBehaviour {
 			}
 			output += "\n";
 		}
-		Debug.Log (output);
+		//Debug.Log (output);
 	}
 
 	private void InitializeMap() {
